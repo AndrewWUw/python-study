@@ -1,0 +1,90 @@
+
+<span style="color:#ff7700; font-weight:bold">from</span> <span style="color:#dc143c">__future__</span> <span style="color:#ff7700; font-weight:bold">import</span> with_statement
+<span style="color:#ff7700; font-weight:bold">import</span> <span style="color:#dc143c">cPickle</span> <span style="color:#ff7700; font-weight:bold">as</span> <span style="color:#dc143c">pickle</span>
+<span style="color:#ff7700; font-weight:bold">from</span> matplotlib <span style="color:#ff7700; font-weight:bold">import</span> pyplot
+<span style="color:#ff7700; font-weight:bold">from</span> numpy <span style="color:#ff7700; font-weight:bold">import</span> zeros, <span style="color:#dc143c">array</span>, tile
+<span style="color:#ff7700; font-weight:bold">from</span> scipy.<span style="color:black">linalg</span> <span style="color:#ff7700; font-weight:bold">import</span> norm
+<span style="color:#ff7700; font-weight:bold">import</span> numpy.<span style="color:black">matlib</span> <span style="color:#ff7700; font-weight:bold">as</span> ml
+<span style="color:#ff7700; font-weight:bold">import</span> <span style="color:#dc143c">random</span>
+ 
+<span style="color:#ff7700; font-weight:bold">def</span> kmeans<span style="color:black">(</span>X, k, observer=<span style="color:#080000">None</span>, threshold=1e-15, maxiter=<span style="color:#ff4500">300</span><span style="color:black">)</span>:
+    N = <span style="color:#080000">len</span><span style="color:black">(</span>X<span style="color:black">)</span>
+    labels = zeros<span style="color:black">(</span>N, dtype=<span style="color:#080000">int</span><span style="color:black">)</span>
+    centers = <span style="color:#dc143c">array</span><span style="color:black">(</span><span style="color:#dc143c">random</span>.<span style="color:black">sample</span><span style="color:black">(</span>X, k<span style="color:black">)</span><span style="color:black">)</span>
+    <span style="color:#080000">iter</span> = <span style="color:#ff4500">0</span>
+ 
+    <span style="color:#ff7700; font-weight:bold">def</span> calc_J<span style="color:black">(</span><span style="color:black">)</span>:
+        <span style="color:#080000">sum</span> = <span style="color:#ff4500">0</span>
+        <span style="color:#ff7700; font-weight:bold">for</span> i <span style="color:#ff7700; font-weight:bold">in</span> <span style="color:#080000">xrange</span><span style="color:black">(</span>N<span style="color:black">)</span>:
+            <span style="color:#080000">sum</span> += norm<span style="color:black">(</span>X<span style="color:black">[</span>i<span style="color:black">]</span>-centers<span style="color:black">[</span>labels<span style="color:black">[</span>i<span style="color:black">]</span><span style="color:black">]</span><span style="color:black">)</span>
+        <span style="color:#ff7700; font-weight:bold">return</span> <span style="color:#080000">sum</span>
+ 
+    <span style="color:#ff7700; font-weight:bold">def</span> distmat<span style="color:black">(</span>X, Y<span style="color:black">)</span>:
+        n = <span style="color:#080000">len</span><span style="color:black">(</span>X<span style="color:black">)</span>
+        m = <span style="color:#080000">len</span><span style="color:black">(</span>Y<span style="color:black">)</span>
+        xx = ml.<span style="color:#080000">sum</span><span style="color:black">(</span>X<span style="color:#66cc66">*</span>X, axis=<span style="color:#ff4500">1</span><span style="color:black">)</span>
+        yy = ml.<span style="color:#080000">sum</span><span style="color:black">(</span>Y<span style="color:#66cc66">*</span>Y, axis=<span style="color:#ff4500">1</span><span style="color:black">)</span>
+        xy = ml.<span style="color:black">dot</span><span style="color:black">(</span>X, Y.<span style="color:black">T</span><span style="color:black">)</span>
+ 
+        <span style="color:#ff7700; font-weight:bold">return</span> tile<span style="color:black">(</span>xx, <span style="color:black">(</span>m, <span style="color:#ff4500">1</span><span style="color:black">)</span><span style="color:black">)</span>.<span style="color:black">T</span>+tile<span style="color:black">(</span>yy, <span style="color:black">(</span>n, <span style="color:#ff4500">1</span><span style="color:black">)</span><span style="color:black">)</span> - <span style="color:#ff4500">2</span><span style="color:#66cc66">*</span>xy
+ 
+    Jprev = calc_J<span style="color:black">(</span><span style="color:black">)</span>
+    <span style="color:#ff7700; font-weight:bold">while</span> <span style="color:#080000">True</span>:
+        <span style="color:#808080; font-style:italic"># notify the observer</span>
+        <span style="color:#ff7700; font-weight:bold">if</span> observer <span style="color:#ff7700; font-weight:bold">is</span> <span style="color:#ff7700; font-weight:bold">not</span> <span style="color:#080000">None</span>:
+            observer<span style="color:black">(</span><span style="color:#080000">iter</span>, labels, centers<span style="color:black">)</span>
+ 
+        <span style="color:#808080; font-style:italic"># calculate distance from x to each center</span>
+        <span style="color:#808080; font-style:italic"># distance_matrix is only available in scipy newer than 0.7</span>
+        <span style="color:#808080; font-style:italic"># dist = distance_matrix(X, centers)</span>
+        dist = distmat<span style="color:black">(</span>X, centers<span style="color:black">)</span>
+        <span style="color:#808080; font-style:italic"># assign x to nearst center</span>
+        labels = dist.<span style="color:black">argmin</span><span style="color:black">(</span>axis=<span style="color:#ff4500">1</span><span style="color:black">)</span>
+        <span style="color:#808080; font-style:italic"># re-calculate each center</span>
+        <span style="color:#ff7700; font-weight:bold">for</span> j <span style="color:#ff7700; font-weight:bold">in</span> <span style="color:#080000">range</span><span style="color:black">(</span>k<span style="color:black">)</span>:
+            idx_j = <span style="color:black">(</span>labels == j<span style="color:black">)</span>.<span style="color:black">nonzero</span><span style="color:black">(</span><span style="color:black">)</span>
+            centers<span style="color:black">[</span>j<span style="color:black">]</span> = X<span style="color:black">[</span>idx_j<span style="color:black">]</span>.<span style="color:black">mean</span><span style="color:black">(</span>axis=<span style="color:#ff4500">0</span><span style="color:black">)</span>
+ 
+        J = calc_J<span style="color:black">(</span><span style="color:black">)</span>
+        <span style="color:#080000">iter</span> += <span style="color:#ff4500">1</span>
+ 
+        <span style="color:#ff7700; font-weight:bold">if</span> Jprev-J <span style="color:#66cc66"><</span> threshold:
+            <span style="color:#ff7700; font-weight:bold">break</span>
+        Jprev = J
+        <span style="color:#ff7700; font-weight:bold">if</span> <span style="color:#080000">iter</span> <span style="color:#66cc66">></span>= maxiter:
+            <span style="color:#ff7700; font-weight:bold">break</span>
+ 
+    <span style="color:#808080; font-style:italic"># final notification</span>
+    <span style="color:#ff7700; font-weight:bold">if</span> observer <span style="color:#ff7700; font-weight:bold">is</span> <span style="color:#ff7700; font-weight:bold">not</span> <span style="color:#080000">None</span>:
+        observer<span style="color:black">(</span><span style="color:#080000">iter</span>, labels, centers<span style="color:black">)</span>
+ 
+<span style="color:#ff7700; font-weight:bold">if</span> __name__ == <span style="color:#483d8b">'__main__'</span>:
+    <span style="color:#808080; font-style:italic"># load previously generated points</span>
+    <span style="color:#ff7700; font-weight:bold">with</span> <span style="color:#080000">open</span><span style="color:black">(</span><span style="color:#483d8b">'cluster.pkl'</span><span style="color:black">)</span> <span style="color:#ff7700; font-weight:bold">as</span> inf:
+        samples = <span style="color:#dc143c">pickle</span>.<span style="color:black">load</span><span style="color:black">(</span>inf<span style="color:black">)</span>
+    N = <span style="color:#ff4500">0</span>
+    <span style="color:#ff7700; font-weight:bold">for</span> smp <span style="color:#ff7700; font-weight:bold">in</span> samples:
+        N += <span style="color:#080000">len</span><span style="color:black">(</span>smp<span style="color:black">[</span><span style="color:#ff4500">0</span><span style="color:black">]</span><span style="color:black">)</span>
+    X = zeros<span style="color:black">(</span><span style="color:black">(</span>N, <span style="color:#ff4500">2</span><span style="color:black">)</span><span style="color:black">)</span>
+    idxfrm = <span style="color:#ff4500">0</span>
+    <span style="color:#ff7700; font-weight:bold">for</span> i <span style="color:#ff7700; font-weight:bold">in</span> <span style="color:#080000">range</span><span style="color:black">(</span><span style="color:#080000">len</span><span style="color:black">(</span>samples<span style="color:black">)</span><span style="color:black">)</span>:
+        idxto = idxfrm + <span style="color:#080000">len</span><span style="color:black">(</span>samples<span style="color:black">[</span>i<span style="color:black">]</span><span style="color:black">[</span><span style="color:#ff4500">0</span><span style="color:black">]</span><span style="color:black">)</span>
+        X<span style="color:black">[</span>idxfrm:idxto, <span style="color:#ff4500">0</span><span style="color:black">]</span> = samples<span style="color:black">[</span>i<span style="color:black">]</span><span style="color:black">[</span><span style="color:#ff4500">0</span><span style="color:black">]</span>
+        X<span style="color:black">[</span>idxfrm:idxto, <span style="color:#ff4500">1</span><span style="color:black">]</span> = samples<span style="color:black">[</span>i<span style="color:black">]</span><span style="color:black">[</span><span style="color:#ff4500">1</span><span style="color:black">]</span>
+        idxfrm = idxto
+ 
+    <span style="color:#ff7700; font-weight:bold">def</span> observer<span style="color:black">(</span><span style="color:#080000">iter</span>, labels, centers<span style="color:black">)</span>:
+        <span style="color:#ff7700; font-weight:bold">print</span> <span style="color:#483d8b">"iter %d."</span> <span style="color:#66cc66">%</span> <span style="color:#080000">iter</span>
+        colors = <span style="color:#dc143c">array</span><span style="color:black">(</span><span style="color:black">[</span><span style="color:black">[</span><span style="color:#ff4500">1</span>, <span style="color:#ff4500">0</span>, <span style="color:#ff4500">0</span><span style="color:black">]</span>, <span style="color:black">[</span><span style="color:#ff4500">0</span>, <span style="color:#ff4500">1</span>, <span style="color:#ff4500">0</span><span style="color:black">]</span>, <span style="color:black">[</span><span style="color:#ff4500">0</span>, <span style="color:#ff4500">0</span>, <span style="color:#ff4500">1</span><span style="color:black">]</span><span style="color:black">]</span><span style="color:black">)</span>
+        pyplot.<span style="color:black">plot</span><span style="color:black">(</span>hold=<span style="color:#080000">False</span><span style="color:black">)</span>  <span style="color:#808080; font-style:italic"># clear previous plot</span>
+        pyplot.<span style="color:black">hold</span><span style="color:black">(</span><span style="color:#080000">True</span><span style="color:black">)</span>
+ 
+        <span style="color:#808080; font-style:italic"># draw points</span>
+        data_colors=<span style="color:black">[</span>colors<span style="color:black">[</span>lbl<span style="color:black">]</span> <span style="color:#ff7700; font-weight:bold">for</span> lbl <span style="color:#ff7700; font-weight:bold">in</span> labels<span style="color:black">]</span>
+        pyplot.<span style="color:black">scatter</span><span style="color:black">(</span>X<span style="color:black">[</span>:, <span style="color:#ff4500">0</span><span style="color:black">]</span>, X<span style="color:black">[</span>:, <span style="color:#ff4500">1</span><span style="color:black">]</span>, c=data_colors, alpha=<span style="color:#ff4500">0.5</span><span style="color:black">)</span>
+        <span style="color:#808080; font-style:italic"># draw centers</span>
+        pyplot.<span style="color:black">scatter</span><span style="color:black">(</span>centers<span style="color:black">[</span>:, <span style="color:#ff4500">0</span><span style="color:black">]</span>, centers<span style="color:black">[</span>:, <span style="color:#ff4500">1</span><span style="color:black">]</span>, s=<span style="color:#ff4500">200</span>, c=colors<span style="color:black">)</span>
+ 
+        pyplot.<span style="color:black">savefig</span><span style="color:black">(</span><span style="color:#483d8b">'kmeans/iter_%02d.png'</span> <span style="color:#66cc66">%</span> <span style="color:#080000">iter</span>, format=<span style="color:#483d8b">'png'</span><span style="color:black">)</span>
+ 
+    kmeans<span style="color:black">(</span>X, <span style="color:#ff4500">3</span>, observer=observer<span style="color:black">)</span>
